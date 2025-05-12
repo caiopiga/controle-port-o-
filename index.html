@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Portão</title>
+    <title>Controle de Portão IR</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,9 +58,30 @@
             color: white;
         }
         
+        .btn-secondary {
+            background-color: #ff9900;
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: #cc3300;
+            color: white;
+        }
+        
+        .btn:active {
+            transform: scale(0.97);
+        }
+        
         .btn-primary:active {
             background-color: #004999;
-            transform: scale(0.97);
+        }
+        
+        .btn-secondary:active {
+            background-color: #cc7a00;
+        }
+        
+        .btn-danger:active {
+            background-color: #992600;
         }
         
         .btn-ripple {
@@ -93,6 +114,56 @@
             text-align: center;
         }
         
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .pulse {
+            height: 100px;
+            width: 100px;
+            background-color: #ff9900;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 20px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.7);
+            }
+            
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 20px rgba(255, 153, 0, 0);
+            }
+            
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 153, 0, 0);
+            }
+        }
+        
         footer {
             background-color: #333;
             color: white;
@@ -104,29 +175,60 @@
 </head>
 <body>
     <header>
-        <h1>Controle de Portão</h1>
+        <h1>Controle de Portão IR</h1>
     </header>
     
     <div class="container">
         <div class="btn-container">
             <button id="openBtn" class="btn btn-primary btn-ripple">ABRIR/FECHAR PORTÃO</button>
+            <button id="recordBtn" class="btn btn-secondary btn-ripple">GRAVAR SINAL IR</button>
+            <button id="testBtn" class="btn btn-danger btn-ripple">TESTAR SINAL</button>
         </div>
         
         <div class="status">
             <p>Status: <span id="statusText">Pronto</span></p>
+            <p>Sinal IR: <span id="signalStatus">Não gravado</span></p>
             <p>Última ação: <span id="lastAction">Nenhuma</span></p>
         </div>
     </div>
     
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <h2>Gravando Sinal IR</h2>
+            <p>Aponte seu controle para o iPhone e pressione o botão</p>
+            <div class="pulse"></div>
+            <p id="recordingStatus">Aguardando sinal...</p>
+            <button id="cancelRecordBtn" class="btn btn-danger">Cancelar</button>
+        </div>
+    </div>
+    
     <footer>
-        <p>Controle de Portão v1.0</p>
+        <p>Controle de Portão IR v1.0</p>
     </footer>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const openBtn = document.getElementById('openBtn');
+            const recordBtn = document.getElementById('recordBtn');
+            const testBtn = document.getElementById('testBtn');
             const statusText = document.getElementById('statusText');
+            const signalStatus = document.getElementById('signalStatus');
             const lastAction = document.getElementById('lastAction');
+            const modal = document.getElementById('recordModal');
+            const cancelRecordBtn = document.getElementById('cancelRecordBtn');
+            const recordingStatus = document.getElementById('recordingStatus');
+            
+            let irSignal = localStorage.getItem('irSignal') || null;
+            
+            if (irSignal) {
+                signalStatus.textContent = "Sinal gravado";
+                openBtn.disabled = false;
+                testBtn.disabled = false;
+            } else {
+                signalStatus.textContent = "Não gravado";
+                openBtn.disabled = true;
+                testBtn.disabled = true;
+            }
             
             function createRipple(event) {
                 const button = event.currentTarget;
@@ -148,24 +250,36 @@
                 button.appendChild(circle);
             }
             
+            function updateDateTime() {
+                const now = new Date();
+                return now.toLocaleTimeString();
+            }
+            
             openBtn.addEventListener('click', async (e) => {
                 createRipple(e);
-                statusText.textContent = "Enviando comando...";
+                statusText.textContent = "Enviando sinal IR...";
+                
+                if (!irSignal) {
+                    statusText.textContent = "Nenhum sinal IR gravado!";
+                    return;
+                }
                 
                 try {
-                    const response = await fetch('/trigger', {
-                        method: 'POST'
-                    });
+                    // Aqui seria chamada a API nativa para enviar o sinal IR
+                    // Como exemplo, simulamos uma requisição para um servidor local
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     
-                    if (response.ok) {
-                        statusText.textContent = "Comando enviado!";
-                        const now = new Date();
-                        lastAction.textContent = `Portão acionado em ${now.toLocaleTimeString()}`;
-                    } else {
-                        throw new Error("Falha ao enviar comando");
+                    statusText.textContent = "Sinal IR enviado!";
+                    lastAction.textContent = `Portão acionado em ${updateDateTime()}`;
+                    
+                    // Na implementação real, você usaria a API específica para iOS
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.sendIRSignal) {
+                        window.webkit.messageHandlers.sendIRSignal.postMessage({
+                            signal: irSignal
+                        });
                     }
                 } catch (error) {
-                    statusText.textContent = "Erro ao enviar comando";
+                    statusText.textContent = "Erro ao enviar sinal IR";
                     console.error("Erro:", error);
                 }
                 
@@ -173,6 +287,86 @@
                     statusText.textContent = "Pronto";
                 }, 3000);
             });
+            
+            recordBtn.addEventListener('click', (e) => {
+                createRipple(e);
+                modal.style.display = "flex";
+                recordingStatus.textContent = "Aguardando sinal...";
+                
+                // Aqui seria chamada a API nativa para iniciar a gravação do sinal IR
+                // Na implementação real, você usaria a API específica para iOS
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.recordIRSignal) {
+                    window.webkit.messageHandlers.recordIRSignal.postMessage({});
+                }
+                
+                // Simulação de gravação para demonstração
+                setTimeout(() => {
+                    // Simulando recebimento do sinal
+                    const simulatedSignal = "IRsignal:" + Date.now().toString();
+                    recordingCompleted(simulatedSignal);
+                }, 5000);
+            });
+            
+            // Função que seria chamada pelo iOS quando a gravação for concluída
+            window.recordingCompleted = function(signal) {
+                irSignal = signal;
+                localStorage.setItem('irSignal', irSignal);
+                signalStatus.textContent = "Sinal gravado";
+                openBtn.disabled = false;
+                testBtn.disabled = false;
+                modal.style.display = "none";
+                recordingStatus.textContent = "Sinal gravado com sucesso!";
+                lastAction.textContent = `Sinal gravado em ${updateDateTime()}`;
+            };
+            
+            testBtn.addEventListener('click', async (e) => {
+                createRipple(e);
+                if (!irSignal) {
+                    statusText.textContent = "Nenhum sinal IR gravado!";
+                    return;
+                }
+                
+                statusText.textContent = "Testando sinal IR...";
+                
+                try {
+                    // Aqui seria chamada a API nativa para enviar o sinal IR (mesmo código do botão abrir)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    statusText.textContent = "Teste concluído!";
+                    lastAction.textContent = `Teste realizado em ${updateDateTime()}`;
+                    
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.sendIRSignal) {
+                        window.webkit.messageHandlers.sendIRSignal.postMessage({
+                            signal: irSignal
+                        });
+                    }
+                } catch (error) {
+                    statusText.textContent = "Erro ao testar sinal";
+                    console.error("Erro:", error);
+                }
+                
+                setTimeout(() => {
+                    statusText.textContent = "Pronto";
+                }, 3000);
+            });
+            
+            cancelRecordBtn.addEventListener('click', () => {
+                modal.style.display = "none";
+                
+                // Cancelar a gravação se estiver em andamento
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.cancelRecordIRSignal) {
+                    window.webkit.messageHandlers.cancelRecordIRSignal.postMessage({});
+                }
+            });
+            
+            // Função que seria chamada pelo iOS em caso de erro na gravação
+            window.recordingError = function(errorMsg) {
+                modal.style.display = "none";
+                statusText.textContent = "Erro: " + errorMsg;
+                setTimeout(() => {
+                    statusText.textContent = "Pronto";
+                }, 3000);
+            };
         });
     </script>
 </body>
